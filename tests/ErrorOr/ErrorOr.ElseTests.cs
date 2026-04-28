@@ -229,7 +229,7 @@ public class ElseTests
     }
 
     [Fact]
-    public async Task CallingElseWithValueFuncAfterThenAsync_WhenIsError_ShouldInvokeElseFunc_ButWithErrorOrReturn_ContinueChainning()
+    public async Task CallingElseWithValueFuncAfterThenAsync_WhenIsError_ShouldInvokeElseFunc_ButWithErrorOrReturn_ContinueChaining()
     {
         // Arrange
         ErrorOr<string> errorOrString = Error.NotFound();
