@@ -648,7 +648,7 @@ A custom error type can be created with the `Custom` static method
 ```cs
 public static class MyErrorTypes
 {
-    const int ShouldNeverHappen = 12;
+    public const int ShouldNeverHappen = 12;
 }
 
 var error = Error.Custom(
