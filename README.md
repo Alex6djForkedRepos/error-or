@@ -58,6 +58,7 @@
     - [`ElseAsync`](#elseasync)
     - [`ElseDo` and `ElseDoAsync`](#elsedo-and-elsedoasync)
 - [Mixing Features (`Then`, `FailIf`, `Else`, `Switch`, `Match`)](#mixing-features-then-failif-else-switch-match)
+- [Recording Outcomes](#recording-outcomes)
 - [Error Types](#error-types)
   - [Built in error types](#built-in-error-types)
   - [Custom error types](#custom-error-types)
@@ -618,6 +619,70 @@ ErrorOr<string> foo = await errorOrInt
       .MatchFirst(
           value => value,
           firstError => $"An error occurred: {firstError.Description}");
+```
+
+# Recording Outcomes
+
+When working in cross-cutting concerns such as logging, auditing, or middleware pipelines, you may hold a reference to `IErrorOr` without knowing the concrete `TValue` type. The `IRecordable` interface provides a way to obtain a JSON representation of the current state in these scenarios.
+
+Because `IErrorOr` inherits from `IRecordable`, `GetRecording()` is available directly on any `IErrorOr` reference — no cast required.
+
+`GetRecording()` always returns safely — when the state is a value it returns a JSON object; when the state is errors it returns a JSON array of those errors. The output is indented, enums are serialized as strings, and null properties are always included:
+
+```cs
+void Log(IErrorOr result)
+{
+    Console.WriteLine(result.GetRecording());
+}
+
+// Value state:
+// {
+//   "Name": "Alice",
+//   "MiddleName": null,
+//   "Age": 30
+// }
+
+// Error state:
+// [
+//   {
+//     "Code": "User.NotFound",
+//     "Description": "User was not found.",
+//     "Type": "NotFound",
+//     "NumericType": 3,
+//     "Metadata": null
+//   }
+// ]
+```
+
+When you have a concrete `ErrorOr<TValue>` reference, `ToString()` produces the same JSON output as `GetRecording()`, so it works naturally in string interpolation or anywhere a string is expected:
+
+```cs
+ErrorOr<User> result = GetUser(id);
+
+// Explicit call
+Console.WriteLine(result.ToString());
+
+// Implicit — string interpolation calls ToString() automatically
+logger.LogInformation("Result: {Result}", result);
+Console.WriteLine($"Outcome: {result}");
+
+// Value state:
+// {
+//   "Name": "Alice",
+//   "MiddleName": null,
+//   "Age": 30
+// }
+
+// Error state:
+// [
+//   {
+//     "Code": "User.NotFound",
+//     "Description": "User was not found.",
+//     "Type": "NotFound",
+//     "NumericType": 3,
+//     "Metadata": null
+//   }
+// ]
 ```
 
 # Error Types
