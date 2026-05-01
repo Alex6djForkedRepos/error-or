@@ -51,6 +51,7 @@
     - [`Then`](#then-1)
     - [`ThenAsync`](#thenasync)
     - [`ThenDo` and `ThenDoAsync`](#thendo-and-thendoasync)
+    - [`ThenEnsure` and `ThenEnsureAsync`](#thenensure-and-thenensureasync)
     - [Mixing `Then`, `ThenDo`, `ThenAsync`, `ThenDoAsync`](#mixing-then-thendo-thenasync-thendoasync)
   - [`FailIf`](#failif)
   - [`Else`](#else)
@@ -524,6 +525,41 @@ ErrorOr<string> foo = await result
     .ThenDo(val => Console.WriteLine($"Finsihed waiting {val} seconds."))
     .ThenDoAsync(val => Task.FromResult(val * 2))
     .ThenDo(val => $"The result is {val}");
+```
+
+### `ThenEnsure` and `ThenEnsureAsync`
+
+`ThenEnsure` and `ThenEnsureAsync` are similar to `ThenDo` and `ThenDoAsync`, but they receive a function that can return errors.
+If no errors are returned, the original value is preserved and the ensure function's success value is ignored.
+
+```cs
+ErrorOr<User> CacheUser(User user)
+{
+    ErrorOr<Success> result = _cache.Set(user);
+    return result.IsError ? result.Errors : user;
+}
+
+ErrorOr<User> userOrError = _userRepository
+    .GetById(userId)
+    .ThenEnsure(CacheUser);
+
+// Success: userOrError is the original user from GetById.
+// Failure: userOrError contains cache errors from CacheUser.
+```
+
+```cs
+async Task<ErrorOr<User>> CacheUserAsync(User user)
+{
+    ErrorOr<Success> result = await _cache.SetAsync(user);
+    return result.IsError ? result.Errors : user;
+}
+
+ErrorOr<User> userOrError = await _userRepository
+    .GetByIdAsync(userId)
+    .ThenEnsureAsync(CacheUserAsync);
+
+// Success: userOrError is the original user from GetByIdAsync.
+// Failure: userOrError contains cache errors from CacheUserAsync.
 ```
 
 ### Mixing `Then`, `ThenDo`, `ThenAsync`, `ThenDoAsync`
