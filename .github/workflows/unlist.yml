@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
         inputs:
             version:
-                description: 'Version to unlist from NuGet feed (z.B. 1.2.3)'
+                description: 'Version to unlist from NuGet feed (e.g. 1.2.3)'
                 required: true
                 type: string
 
@@ -12,12 +12,25 @@ jobs:
     unlist:
         runs-on: ubuntu-latest
         environment: production
+        permissions:
+            id-token: write
+            contents: read
         steps:
+            - uses: actions/setup-dotnet@v5
+              with:
+                  dotnet-version: 8.0.x
+            - name: NuGet login (OIDC -> short-lived API key)
+              uses: NuGet/login@v1
+              id: nuget-login
+              with:
+                  user: ${{ secrets.NUGET_USER }}
             - name: Unlist from NuGet
+              env:
+                  VERSION: ${{ github.event.inputs.version }}
               run: |
                   dotnet nuget delete \
                     ErrorOr \
-                    "${{ github.event.inputs.version }}" \
-                    --api-key "${{ secrets.ERROR_OR_NUGET_SECRET }}" \
+                    "$VERSION" \
+                    --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
                     --source https://api.nuget.org/v3/index.json \
                     --non-interactive
